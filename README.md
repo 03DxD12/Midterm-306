@@ -19,7 +19,6 @@ Open `ITST_306_UXUI_Flashcards.html` in a browser. Choose an answer, reveal the 
 Keyboard shortcuts:
 
 - `Left Arrow` and `Right Arrow` move between cards
-- `Space` flips the current card
 - `R` shuffles the deck
 - `F` toggles fullscreen
 

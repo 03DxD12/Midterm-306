@@ -29,7 +29,7 @@ select:hover{border-color:#b7cdd5;box-shadow:0 10px 24px rgba(31,52,74,.09)}
 .progress{height:8px;background:#dfe8ec;border-radius:999px;overflow:hidden;margin-bottom:14px}
 .bar{height:100%;background:linear-gradient(90deg,var(--accent),#f2b84b);width:0;transition:width .28s ease}
 .cardwrap{min-height:480px;perspective:1500px;animation:riseIn .5s ease both}
-.card{position:relative;min-height:480px;transform-style:preserve-3d;transition:transform .58s cubic-bezier(.22,1,.36,1),filter .25s ease;cursor:pointer;touch-action:manipulation}
+.card{position:relative;min-height:480px;transform-style:preserve-3d;transition:transform .58s cubic-bezier(.22,1,.36,1),filter .25s ease;touch-action:manipulation}
 .card.flipped{transform:rotateY(180deg)}
 .card.is-moving{filter:saturate(1.05)}
 .card.is-moving .face{animation:facePulse .28s ease both}
@@ -136,13 +136,13 @@ body:fullscreen .app{max-width:1040px;padding-top:22px}
         <div class="q" id="front"></div>
         <div class="choices" id="choices"></div>
         <div class="result" id="result"></div>
-        <div class="hint">Pick an answer, then click the card to see the explanation</div>
+        <div class="hint">Pick an answer or tap Reveal to see the explanation</div>
       </div>
       <div class="face back">
         <div class="ans">Correct answer</div>
         <div class="ansText" id="answer"></div>
         <div class="why" id="why"></div>
-        <div class="hint">Click the card to flip back</div>
+        <div class="hint">Tap Hide to return to the question</div>
       </div>
     </div>
   </div>
@@ -162,7 +162,7 @@ body:fullscreen .app{max-width:1040px;padding-top:22px}
       <button id="btnFull" type="button">Full</button>
       <button id="btnDownload" type="button">Q&A</button>
     </div>
-    <div class="shortcut"><kbd>←</kbd> <kbd>→</kbd> <kbd>Space</kbd></div>
+    <div class="shortcut"><kbd>←</kbd> <kbd>→</kbd> <kbd>R</kbd></div>
   </div>
   <div class="stats" id="stats"></div>
   <footer class="footer">DSD reviewer project. Special credits to <strong>Cat</strong>.</footer>
@@ -360,6 +360,7 @@ function pick(btn, text, c) {
   if (!right) btn.classList.add("wrong");
   $("result").textContent = right ? "Correct" : "Not quite. The right answer is highlighted.";
   $("result").className = "result " + (right ? "ok" : "no");
+  showAnswer();
 }
 
 function updateStats() {
@@ -380,6 +381,12 @@ function updateRevealButton() {
 function flip(){
   if (!deck.length) return;
   card.classList.toggle("flipped");
+  updateRevealButton();
+  pulseCard();
+}
+function showAnswer(){
+  if (!deck.length) return;
+  card.classList.add("flipped");
   updateRevealButton();
   pulseCard();
 }
@@ -457,7 +464,6 @@ function mark(known){
   if (idx < deck.length - 1) next();
 }
 
-card.onclick = flip;
 $("btnNext").onclick = next; $("btnPrev").onclick = prev; $("btnShuffle").onclick = shuffle;
 $("btnReveal").onclick = e => { e.preventDefault(); e.stopPropagation(); reveal(); };
 $("btnFull").onclick = e => { e.preventDefault(); e.stopPropagation(); toggleFull(); };
@@ -467,7 +473,6 @@ document.addEventListener("keydown", e => {
   if (e.target.tagName === "SELECT") return;
   if (e.key === "ArrowRight") next();
   else if (e.key === "ArrowLeft") prev();
-  else if (e.key === " ") { e.preventDefault(); flip(); }
   else if (e.key.toLowerCase() === "r") shuffle();
   else if (e.key.toLowerCase() === "f") toggleFull();
 });
