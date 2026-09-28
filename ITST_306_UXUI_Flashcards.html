@@ -1,0 +1,393 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<meta name="description" content="A clean mobile-friendly ITST 306 UX/UI flashcard reviewer with reveal answer, fullscreen, download, topic filtering, shuffle, and review tracking.">
+<title>ITST 306 UX/UI Flashcards</title>
+<style>
+:root{
+  --bg:#f6f7fb; --surface:#ffffff; --surface-soft:#f0f4f7; --text:#17202a; --muted:#637083;
+  --line:#dde5ee; --accent:#1f7a8c; --accent-strong:#125766; --good:#e9f8ef; --goodline:#25a55f;
+  --bad:#fff0f0; --badline:#de4f4f; --shadow:0 18px 45px rgba(31,52,74,.12);
+}
+*{box-sizing:border-box}
+html{min-height:100%;background:var(--bg)}
+body{margin:0;background:linear-gradient(180deg,#f9fbfd 0%,#eef4f6 100%);color:var(--text);font-family:"Segoe UI",system-ui,-apple-system,Arial,sans-serif;min-height:100vh}
+button,select{font:inherit}
+.app{width:min(980px,100%);margin:0 auto;padding:18px 16px 28px}
+.header{display:grid;gap:12px;margin-bottom:14px}
+.titlebar{display:flex;align-items:flex-end;justify-content:space-between;gap:14px}
+h1{font-size:clamp(24px,4vw,38px);line-height:1.05;margin:0;letter-spacing:0;color:#0f2830}
+.subtitle{color:var(--muted);font-size:14px;line-height:1.45;margin-top:6px}
+.toolbar{display:flex;justify-content:flex-end;gap:10px;flex-wrap:wrap}
+select{width:min(360px,100%);background:var(--surface);color:var(--text);border:1px solid var(--line);border-radius:8px;padding:11px 38px 11px 12px;font-size:14px;box-shadow:0 6px 18px rgba(31,52,74,.06)}
+.toprow{display:flex;justify-content:space-between;gap:12px;font-size:14px;color:#455263;margin:12px 0 9px}
+.progress{height:8px;background:#dfe8ec;border-radius:999px;overflow:hidden;margin-bottom:14px}
+.bar{height:100%;background:linear-gradient(90deg,var(--accent),#f2b84b);width:0;transition:width .28s ease}
+.cardwrap{min-height:480px;perspective:1400px}
+.card{position:relative;min-height:480px;transform-style:preserve-3d;transition:transform .55s cubic-bezier(.22,1,.36,1),filter .25s ease;cursor:pointer;animation:riseIn .5s ease both}
+.card.flipped{transform:rotateY(180deg)}
+.card.is-moving{filter:saturate(1.04)}
+.face{position:absolute;inset:0;backface-visibility:hidden;background:rgba(255,255,255,.94);border:1px solid rgba(221,229,238,.95);border-radius:8px;display:flex;flex-direction:column;align-items:center;justify-content:center;text-align:center;padding:34px clamp(20px,5vw,48px);box-shadow:var(--shadow);overflow:hidden}
+.face::after{content:"";position:absolute;inset:auto 14% -24px;height:48px;background:rgba(31,122,140,.08);filter:blur(18px);opacity:0;transition:opacity .3s ease}
+.card:hover .face::after{opacity:1}
+.back{transform:rotateY(180deg);background:#fbfcfd}
+.section{color:var(--accent-strong);font-size:12px;font-weight:700;letter-spacing:.08em;text-transform:uppercase;margin-bottom:14px}
+.q{font-size:clamp(21px,3.2vw,30px);font-weight:750;line-height:1.22;max-width:820px}
+.choices{width:min(820px,100%);display:grid;grid-template-columns:1fr 1fr;gap:12px;margin-top:24px}
+.choice{min-height:56px;background:var(--surface-soft);color:var(--text);border:1px solid var(--line);border-radius:8px;padding:13px 15px;font-size:15px;line-height:1.35;text-align:left;cursor:pointer;box-shadow:0 1px 0 rgba(255,255,255,.8) inset;transition:transform .18s ease,background .18s ease,border-color .18s ease,box-shadow .18s ease}
+.choice:hover:not(:disabled){background:#ffffff;border-color:#bad1d8;box-shadow:0 10px 24px rgba(31,52,74,.09);transform:translateY(-1px)}
+.choice:focus-visible,.circle:focus-visible,.nav button:focus-visible,.utility button:focus-visible,select:focus-visible{outline:3px solid rgba(31,122,140,.25);outline-offset:2px}
+.choice.correct{background:var(--good);border-color:var(--goodline)}
+.choice.wrong{background:var(--bad);border-color:var(--badline)}
+.choice:disabled{cursor:default;color:var(--text);transform:none}
+.result{min-height:24px;margin-top:14px;font-size:15px;font-weight:700}
+.result.ok{color:#167344}.result.no{color:#ba3333}
+.ans{font-size:13px;color:var(--muted);font-weight:700;letter-spacing:.08em;text-transform:uppercase;margin-bottom:12px}
+.ansText{font-size:clamp(21px,3vw,29px);font-weight:750;line-height:1.25;max-width:780px;margin-bottom:18px}
+.why{font-size:clamp(16px,2.1vw,20px);line-height:1.55;color:#455263;max-width:760px}
+.hint{color:#7a8796;font-size:13px;line-height:1.4;margin-top:18px}
+kbd{background:#ffffff;border:1px solid #cfdbe4;border-bottom-color:#b9c8d3;border-radius:5px;padding:2px 7px;color:#536173;font-size:12px}
+.actions{display:grid;grid-template-columns:auto 1fr auto;align-items:center;gap:14px;margin-top:16px}
+.controls{display:flex;justify-content:center;align-items:center;gap:12px}
+.circle{width:52px;height:52px;border-radius:50%;background:var(--surface);border:1px solid var(--line);color:var(--accent-strong);font-size:25px;font-weight:800;cursor:pointer;box-shadow:0 8px 20px rgba(31,52,74,.08);transition:transform .18s ease,background .18s ease,border-color .18s ease}
+.circle:hover{background:#f9fcfd;border-color:#b7cdd5;transform:translateY(-1px)}
+.nav,.utility{display:flex;justify-content:center;gap:10px;flex-wrap:wrap}
+.nav button,.utility button{min-height:44px;background:var(--surface);color:var(--text);border:1px solid var(--line);border-radius:8px;padding:10px 16px;font-size:14px;cursor:pointer;box-shadow:0 8px 20px rgba(31,52,74,.07);transition:transform .18s ease,background .18s ease,border-color .18s ease,box-shadow .18s ease}
+.nav button:hover,.utility button:hover{background:#f9fcfd;border-color:#b7cdd5;box-shadow:0 12px 26px rgba(31,52,74,.1);transform:translateY(-1px)}
+.utility button{background:#0f2830;color:#ffffff;border-color:#0f2830}
+.utility button:hover{background:#16434e;border-color:#16434e}
+.stats{text-align:center;color:var(--muted);font-size:13px;line-height:1.5;margin-top:14px}
+body:fullscreen{background:#eef4f6}
+body:fullscreen .app{max-width:1040px;padding-top:22px}
+@keyframes riseIn{from{opacity:0;transform:translateY(12px) scale(.985)}to{opacity:1;transform:translateY(0) scale(1)}}
+@media(max-width:760px){
+  body{background:#f6f7fb}
+  .app{padding:14px 12px 24px}
+  .titlebar{display:block}
+  .toolbar{justify-content:stretch}
+  select{width:100%}
+  .toprow{font-size:13px;margin-top:10px}
+  .cardwrap,.card{min-height:560px}
+  .face{padding:24px 16px;justify-content:flex-start;padding-top:34px}
+  .choices{grid-template-columns:1fr;gap:10px;margin-top:20px}
+  .choice{min-height:50px;font-size:14px}
+  .actions{grid-template-columns:1fr;gap:12px;margin-top:14px}
+  .controls{order:1}
+  .nav,.utility{order:2;display:grid;grid-template-columns:1fr 1fr 1fr;width:100%;gap:8px}
+  .nav button,.utility button{padding:9px 8px;font-size:13px}
+  .utility{order:3}
+  .shortcut{display:none}
+}
+@media(max-width:390px){
+  .app{padding-left:10px;padding-right:10px}
+  .face{padding-left:13px;padding-right:13px}
+  .nav button{font-size:12px}
+}
+@media(prefers-reduced-motion:reduce){.card,.bar,.choice,.circle,.nav button,.utility button{transition:none;animation:none}}
+</style>
+</head>
+<body>
+<div class="app">
+  <header class="header">
+    <div class="titlebar">
+      <div>
+        <h1>ITST 306 Flashcards</h1>
+        <div class="subtitle">UX/UI and Cross Platform Applications reviewer</div>
+      </div>
+      <div class="toolbar"><select id="filter" aria-label="Filter by topic"></select></div>
+    </div>
+    <div>
+      <div class="toprow"><span id="counter">1 of 1</span><span id="known">Known: 0</span></div>
+      <div class="progress"><div class="bar" id="bar"></div></div>
+    </div>
+  </header>
+
+  <div class="cardwrap">
+    <div class="card" id="card">
+      <div class="face front">
+        <div class="section" id="section"></div>
+        <div class="q" id="front"></div>
+        <div class="choices" id="choices"></div>
+        <div class="result" id="result"></div>
+        <div class="hint">Pick an answer, then click the card to see the explanation</div>
+      </div>
+      <div class="face back">
+        <div class="ans">Correct answer</div>
+        <div class="ansText" id="answer"></div>
+        <div class="why" id="why"></div>
+        <div class="hint">Click the card to flip back</div>
+      </div>
+    </div>
+  </div>
+
+  <div class="actions">
+    <div class="controls">
+      <button class="circle" id="btnReview" title="Mark for review" aria-label="Mark for review">×</button>
+      <button class="circle" id="btnKnown" title="Mark as known" aria-label="Mark as known">✓</button>
+    </div>
+    <div class="nav">
+      <button id="btnPrev">← Prev</button>
+      <button id="btnShuffle">Shuffle</button>
+      <button id="btnNext">Next →</button>
+    </div>
+    <div class="utility">
+      <button id="btnReveal">Reveal</button>
+      <button id="btnFull">Full</button>
+      <button id="btnDownload">Download</button>
+    </div>
+    <div class="shortcut"><kbd>←</kbd> <kbd>→</kbd> <kbd>Space</kbd></div>
+  </div>
+  <div class="stats" id="stats"></div>
+</div>
+
+<script>
+// Each entry: [question, correct answer, [3 wrong answers], explanation]
+const DATA = [
+["UX/UI Fundamentals", [
+["What is UX?","How people feel when using the product",["How good the product looks","What colors are used","How fast the internet is"],"UX = how people feel when interacting with a product or service."],
+["What is UI?","How a product looks and feels",["Research about users","Testing usability","Coding the app"],"UI = how a product looks and feels, not how it functions."],
+["What is the result of UX design?","Low-resolution wireframes",["Final code","A logo","High-resolution wireframes"],"UX = low-resolution wireframes. UI = high-resolution wireframes."],
+["What is the result of UI design?","High-resolution wireframes",["Survey results","A persona","Low-resolution wireframes"],"UI design results in high-resolution wireframes."],
+["What does UX design combine?","User needs + Business vision + Technological feasibility",["Color + Font + Layout","User needs + Visual design","Code + Database + Server"],"The combination 'User needs + Visual design' is for UI design."],
+["What does UI design combine?","User needs + Visual design",["User needs + Business vision + Technological feasibility","Research + Interview","Persona + Journey map"],"UI = User needs + Visual design."],
+["Ana studies whether an app is easy to use and accessible. What kind of work is this?","UX",["UI","Both are exactly the same","It is not design work"],"Usability and accessibility are UX concerns."],
+["Ben is choosing the fonts, colors, and layout of an app. What kind of work is this?","UI design",["UX research","Usability testing","Interviewing"],"Typography, color, and layout belong to UI."],
+["What does \"UX is the naked experience of a product\" mean?","How the product functions, not how it looks",["The product has no design","Only color matters","UX has no UI"],"Function over appearance."],
+["Which is more of a UX concern?","Accessibility",["Font style","Color palette","Icon shape"],"UX is about usability, accessibility, and satisfaction."]
+]],
+["Norman & Design Thinking", [
+["Who is Donald Norman?","A cognitive scientist, author of The Design of Everyday Things, and popularizer of the term UX",["The founder of Figma","A programmer at Apple","The creator of Gestalt principles"],"He was also a former VP of Advanced Technology at Apple."],
+["What is Norman's famous statement?","The problem is not the user. The problem is the design.",["The user is always at fault","More colors make better design","Do not listen to users"],"When users make mistakes, check the design first."],
+["Many people keep pushing a door that should be pulled. What is the problem?","The design of the door",["People are careless","People are weak","People did not read"],"This is a Norman Door. If many users make the same mistake, the design is the problem."],
+["What is a Norman Door?","A design that is confusing because it is not clear how to use it",["A very beautiful door","A door that is always closed","An automatic door"],"It is an example of poor design that confuses users."],
+["A designer thinks users want dark mode but has not asked anyone. What should they do?","Ask and observe the users",["Continue anyway","Copy another app","Wait for complaints"],"Observe before assuming. Ask users instead of guessing."],
+["What is Design Thinking?","A problem-solving approach focused on people and their needs",["Coding an app","Choosing colors","Selling a product"],"It is human-centered, collaborative, optimistic, and experimental."],
+["What is the goal of Design Thinking?","Create a relevant solution to a real problem",["Create the best-looking design","Create the cheapest product","Create anything new"],"Not just something new, but something relevant."],
+["What is the correct order of the 5 stages of Design Thinking?","Empathize, Define, Ideate, Prototype, Test",["Define, Empathize, Test, Prototype, Ideate","Ideate, Define, Empathize, Test, Prototype","Empathize, Ideate, Define, Test, Prototype"],"EMPATHIZE → DEFINE → IDEATE → PROTOTYPE → TEST."],
+["What is Empathize?","Understand the users and their experiences",["Create a prototype","Think of many solutions","Test the solution"],"First stage: understanding users."],
+["What is Define?","Clearly state the user's problem or need",["Create a mockup","Ask users questions","Launch the app"],"Define = identify and clearly state the user's problem."],
+["What is Ideate?","Generate many possible solutions",["Choose one color","Conduct interviews","Send surveys"],"Ideate = many ideas first."],
+["What is Prototype?","A tangible representation of an idea",["Writing a report","Interviewing users","Identifying the problem"],"Example: a sketch, paper mockup, or Figma prototype."],
+["What is Test?","Evaluating the solution with users and getting feedback",["Generating ideas","Writing a persona","Choosing a font"],"Test = evaluate with users and learn from feedback."],
+["A team interviews students to learn how hard it is to find their classroom. Which stage is this?","Empathize",["Test","Prototype","Ideate"],"Interviews and observation = Empathize."],
+["A team writes, \"Students have a hard time finding their classroom.\" Which stage is this?","Define",["Test","Prototype","Empathize"],"Stating the problem = Define."],
+["A team sketches 10 different ideas for the app. Which stage is this?","Ideate",["Define","Empathize","Test"],"Many ideas = Ideate."],
+["A team creates a paper mockup of the app. Which stage is this?","Prototype",["Define","Ideate","Empathize"],"Mockup = Prototype."],
+["A team lets 5 students try the prototype and records their feedback. Which stage is this?","Test",["Define","Ideate","Empathize"],"Users + feedback = Test."]
+]],
+["Design Principles", [
+["According to the module, what does good visual design do?","It reduces unnecessary cognitive effort",["It adds more features","It only makes the app pretty","It increases file size"],"It makes the screen easier for users to understand."],
+["What is Proximity?","Elements close together are seen as related",["Elements that look alike are related","Elements in the same box are grouped","The eye follows smooth paths"],"Proximity = closeness."],
+["A label sits right beside its input field, so users know which one it belongs to. Which principle is this?","Proximity",["Closure","Figure-Ground","Prägnanz"],"Close together = related."],
+["All clickable buttons are blue and round. Which principle is this?","Similarity",["Continuity","Common Fate","Symmetry"],"Look alike = related."],
+["Items inside one card or box look grouped together. Which principle is this?","Common Region",["Proximity","Closure","Similarity"],"Same area = grouped."],
+["What is Continuity?","The eye follows smooth paths",["The eye fills in gaps","Elements are symmetrical","Elements move together"],"Continuity = the eye follows smooth paths."],
+["A popup appears and the background dims so the popup stands out. Which principle is this?","Figure-Ground",["Common Fate","Similarity","Proximity"],"Focal object vs. background."],
+["Three icons move upward at the same time and look like one group. Which principle is this?","Common Fate",["Closure","Continuity","Symmetry"],"Moving together = related."],
+["A logo has a circle with gaps, but people still see a full circle. Which principle is this?","Closure",["Proximity","Similarity","Common Region"],"The brain fills in the gaps."],
+["What is Symmetry & Order?","Symmetrical elements are seen as belonging together",["People prefer simple shapes","Elements move together","Gaps are filled in"],"Symmetrical = belonging together."],
+["What is Prägnanz?","People prefer simple and clear forms",["Close elements are related","Elements that look alike are related","Elements move together"],"Simpler, clearer forms are preferred."],
+["What is Visual Hierarchy?","Guiding users to the most important information first",["Choosing many colors","Organizing code","Adding animation"],"It uses size, contrast, position, spacing, and typography."],
+["The headline is bigger than the other text, so it gets noticed first. Which hierarchy element is this?","Size",["Contrast","Position","Spacing"],"Larger elements attract attention."],
+["A bright orange Buy button on a dark background is noticed right away. Which element is this?","Contrast",["Size","Spacing","Typography"],"Differences make important elements stand out."],
+["According to Still (2018), what was the strongest predictor of where users look first?","Position",["Size","Images","Animation"],"Position was strongest. Size and images alone were poor predictors."],
+["What does spacing do in visual hierarchy?","Clarifies grouping and separation of elements",["Makes text bigger","Changes colors","Adds images"],"Spacing clarifies relationships."],
+["What is Typography?","Using and arranging text to make an interface readable, clear, and organized",["Choosing a background color","Adding images","Coding fonts"],"Typography = the use and arrangement of text."],
+["A designer uses 7 different typefaces on one screen. What is wrong?","Too many typefaces should be avoided",["Nothing, it looks great","It needs more typefaces","All text should be cursive"],"Avoid using too many typefaces in one interface."],
+["What is the correct text hierarchy?","Title → Heading → Body → Supporting text",["Body → Title → Heading → Supporting","Supporting → Body → Heading → Title","Heading → Supporting → Title → Body"],"Title → Heading → Body → Supporting text."],
+["In typography, what should be prioritized?","Readability",["Decoration","Unusual fonts","Many effects"],"Prioritize readability over decoration."],
+["How does color theory help in UI?","It improves usability, readability, hierarchy, and overall UX",["It only makes things pretty","It speeds up the internet","It makes the app smaller"],"Color communicates meaning, hierarchy, status, and emotion."],
+["Only the color red is used to show an error, with no other indicator. What is the problem?","The message relies on color alone",["It is too bright","It is too dark","Nothing"],"Do not rely on color alone. Add text or an icon."],
+["What is Accessibility?","Designing interfaces people with different abilities can perceive, understand, navigate, and use",["Making the UI pretty","Making the app faster","Making an app for one device only"],"Perceive → Understand → Navigate → Use."],
+["Light gray text on a white background is hard to read. What should be fixed?","Increase the contrast between text and background",["Make the text smaller","Add animation","Remove the text"],"Use sufficient text/background contrast."],
+["What is Inclusive Design?","Considering different abilities, needs, and contexts of users from the start",["Designing for only one type of user","Design that puts looks first","Design done after launch"],"It starts from the beginning of the design process."],
+["What effect does accessibility have on other users?","It often improves usability for everyone",["It makes things harder for others","It has no effect","It is only for a few people"],"Accessibility often improves usability for everyone."],
+["What is Responsive Design?","An interface that adapts to different screen sizes, devices, and contexts",["A design that loads fast","A design with lots of animation","A design for laptops only"],"Phones, tablets, laptops, and larger screens."],
+["A designer just shrinks the desktop layout to fit a phone. What is wrong?","A desktop interface should not simply be shrunk onto mobile",["Nothing, that is correct","It should be enlarged","The navigation should be removed"],"Think about stacking, navigation, and the context of each platform."]
+]],
+["Figma & Design Systems", [
+["What is Figma?","A collaborative design tool for UIs, wireframes, mockups, prototypes, components, and design systems",["A programming language","A database","A web browser"],"Figma = a collaborative design tool."],
+["Which part of Figma shows the list of elements in a design?","Layers panel",["Toolbar","Assets","Canvas"],"Main areas: Toolbar, Layers, Canvas, Properties, Assets, Prototype controls."],
+["What are Components in Figma?","Reusable interface elements",["Images only","Colors only","Comments"],"They avoid repeated manual design and copy-pasting."],
+["A designer copy-pastes the same button 20 times. What is a better approach?","Create a component and reuse it",["Keep copy-pasting","Make 20 different buttons","Remove the button"],"Build reusable elements."],
+["What is Auto Layout for?","To help elements behave consistently when content or layout changes",["To add color","To export code","To record video"],"Elements stay consistent when content changes."],
+["What is a Design System?","A structured collection of principles, colors, typography, components, patterns, and usage rules",["A single app","A logo","A coding tool"],"It also includes spacing and documentation."],
+["Buttons look different on every screen of an app. What would help?","A design system",["More colors","More fonts","Removing the buttons"],"A design system provides consistency."],
+["What is a benefit of a design system for developers?","Clearer implementation and better handoff",["More bugs","Longer code","No benefit"],"Reusable UI patterns and better handoff."],
+["What is a benefit of a design system for users?","A predictable and consistent interface",["A more expensive product","More complicated screens","Fewer features"],"It makes the product easier to learn."]
+]],
+["UX Research", [
+["What is UX Research?","Learning about users, their needs, behaviors, and problems to inform design decisions",["Choosing colors","Coding the app","Advertising the app"],"Research informs design decisions."],
+["What happens without research?","Designer assumes → designs → users struggle",["The design is always right","The result is faster and better","Nothing happens"],"Design becomes guesswork without research."],
+["What is the correct flow of research?","Research → Evidence → Insights → Design decisions",["Design → Research → Guess","Insights → Guess → Design","Guess → Design → Evidence"],"Research → Evidence → Insights → Design decisions."],
+["You want to know what users currently do to find a study space. What are you learning about?","Behaviors",["Needs","Preferences","Colors"],"Needs, Behaviors, Preferences. 'What the user currently does' is Behaviors."],
+["What is the format of a Research Objective?","The objective of this research is to understand ___ among ___ so that we can ___.",["As a [user], I want to [action], so that [benefit].","[User] needs a way to [need] because [reason].","My project will focus on ___."],"The others are formats for other artifacts."],
+["What are the three qualities of good research questions?","Specific, actionable, non-leading",["Long, hard, deep","Short, fun, vague","Leading, vague, quick"],"Specific → Actionable → Non-leading."],
+["Which is a better interview question?","How do you currently solve this problem?",["Would you use our app?","Don't you think our app is useful?","Do you like our design?"],"Avoid leading and yes/no questions."],
+["You want to know WHY students are struggling. Which research type fits?","Qualitative (e.g., interviews)",["Quantitative","Neither","Both are the same"],"Qualitative = why/how."],
+["You want to know HOW MANY students use the library. Which research type fits?","Quantitative (e.g., survey)",["Interview","Observation only","Persona"],"Quantitative = how many/how much."],
+["What is a User Survey?","A research method that collects information from many users by asking a set of questions",["A one-on-one conversation only","A prototype","A type of persona"],"It is structured and reaches many users."],
+["What should survey questions be?","Clear, relevant, simple, and unbiased",["Long and complicated","Biased","Anything"],"Clear, Relevant, Simple, Unbiased."],
+["You ask users to rate the app from 1 to 5. What response type is this?","Rating scale",["Multiple choice","Open-ended","Multiple selection"],"Response types: multiple choice, multiple selection, rating scale, open-ended."],
+["What is the difference between an interview and a survey?","An interview explores a user's experience in greater depth",["More people join an interview","Interviews are only numbers","Interviews have no questions"],"Survey = many users, structured. Interview = depth."],
+["\"Tell me about the last time you ordered food on campus.\" What type of question is this?","Open-ended",["Probing","Follow-up","Closing"],"Open-ended lets the person answer freely."],
+["\"What happened next?\" What type of question is this?","Follow-up",["Open-ended","Closing","Leading"],"Follow-up continues the story."],
+["\"Why was that difficult for you?\" What type of question is this?","Probing",["Introduction","Closing","Survey"],"Probing digs into the reason."],
+["What is the correct question sequencing in an interview?","Introduction → Context → Actual experience → Problem → Follow-up → Reflection → Closing",["Problem → Introduction → Closing","Context → Introduction → Problem","Closing → Introduction → Context"],"Memorize the 7 steps."],
+["What comes after Context in question sequencing?","Actual experience",["Closing","Reflection","Introduction"],"Introduction → Context → Actual experience."],
+["In the middle of an interview, the participant wants to stop. What is correct?","Let them stop",["Pressure them to finish","Convince them to continue","Ignore them"],"Participants have the right to withdraw."],
+["What is Informed Consent?","The participant agrees after learning the purpose of the research and how the data will be used",["The participant signs without reading","The participant was forced to join","The purpose was not explained"],"Voluntary, with a clear explanation."],
+["What information should be collected in research?","Only the necessary information",["All personal details","Anything you want","Address and password"],"Collect only necessary information."],
+["What is a Word Cloud?","A visual of words based on how often they appear",["A diagram of relationships between ideas","Grouping notes","A list of questions"],"The bigger the word, the more often it appears."],
+["What is a Mind Map?","A visual diagram showing relationships between ideas or components",["A chart of numbers","A list of users","A screen flow"],"A mind map shows relationships."],
+["A team groups many sticky notes of user comments to find themes. Which method is this?","Affinity diagramming",["Word cloud","Mind map","Prototyping"],"Affinity diagramming = grouping related findings."]
+]],
+["Personas, Stories & Journeys", [
+["What is a Persona?","A fictional representation of a group of users based on research",["A real user who was interviewed","A list of features","A bug report"],"Fictional but research-based. It answers 'Who is the user?'"],
+["A team creates a persona entirely from imagination with no research. What is this?","A common persona mistake",["A correct persona","A journey map","A user story"],"A persona should not be made only from imagination."],
+["Why do we use personas?","To keep users at the center of design and make research-based decisions",["To make the UI prettier","To add more features","To reduce research"],"Empathy, focus, and communicating with stakeholders."],
+["What should a persona include?","Goals, behaviors, needs, pain points, and motivations",["Favorite color only","Favorite game only","The user's password"],"Include information that can influence design decisions."],
+["Which is weak persona information?","Likes blue and gaming",["Has difficulty finding important updates","Uses a phone while outside","Prefers simple, clearly organized information"],"It does not help explain the user's real problem."],
+["What is a User Story?","A short statement of a user's need from the user's point of view",["A long report","A list of screens","The app's code"],"It answers who, what, and why."],
+["What is the correct format of a User Story?","As a [type of user], I want to [action], so that [benefit]",["[User] needs a way to [need] because [reason]","I want a [feature]","The system shall [function]"],"Who, what, why."],
+["Which is a user-focused user story?","As a student, I want to know when my classroom changes, so that I don't go to the wrong room.",["I want a notification button.","Add a red bell icon.","Make the app modern."],"It has a user, action, and benefit. The others are feature-focused."],
+["What is a User Journey?","The series of experiences a user has while achieving a goal",["A list of features","A survey","A prototype"],"Example goal: find the next class."],
+["Which items belong in a journey map?","User goal, stages, actions, thoughts, feelings, pain points, opportunities",["Code","Logo","Colors"],"These are the parts of a journey map."],
+["A journey map only lists screens (Login, Home, Schedule, Profile). What is wrong?","It has no user goal, actions, experience, or pain points",["Nothing is wrong","It lacks color","It is too long"],"A journey map with only screens is weak."],
+["Which artifact answers \"Who is the user?\"","Persona",["Journey map","User story","Design requirement"],"Persona = who."],
+["Which artifact answers \"What does the user experience?\"","Journey map",["Persona","Problem statement","User story"],"Journey map = experience."],
+["Which artifact answers \"What should the product provide?\"","Design requirement",["Persona","Journey map","User story"],"Design requirement = what the product should provide."],
+["How do you find out if the solution works?","Usability testing",["Persona","Word cloud","Mind map"],"Does the solution work? → Usability testing."],
+["A team creates a persona but never uses it in design decisions. What is this?","A common persona mistake",["A good habit","Good practice","A research method"],"A persona should be used to guide design decisions."]
+]],
+["Project Brief & Requirements", [
+["What is the format of a Problem Statement?","[User] needs a way to [need] because [insight/reason].",["As a [user], I want to [action], so that [benefit].","The objective of this research is to...","My project will focus on..."],"Only ONE problem statement is written in the project brief."],
+["Which is the correct User Requirement for the need \"Know available rooms\"?","The system should allow users to view room availability.",["The system should have a blue button.","The system should provide confirmation after booking.","The system should allow users to filter rooms."],"'Confirmation after booking' fits 'Know reservation succeeded'. 'Filter rooms' fits 'Find a suitable room'."],
+["How many user requirements, design goals, and minimum constraints are in the UX Project Brief?","5–7 requirements, 3 design goals, at least 3 constraints",["3 requirements, 5 goals, 7 constraints","10 requirements, 1 goal, 1 constraint","1 requirement, 7 goals, 5 constraints"],"Also 3 research insights and 1 problem statement."],
+["What is the correct order of the UX Project Brief?","Research Insights → Problem Statement → User Requirements → Design Goals → Design Constraints → Project Focus",["Project Focus → Constraints → Goals","Problem Statement → Insights → Goals","Goals → Constraints → Insights"],"This is the order in the reviewer."]
+]]
+];
+
+// Build flat card list
+const ALL = [];
+DATA.forEach(([section, items]) => items.forEach(([q, a, wrong, why]) => {
+  ALL.push({section, q, a, wrong, why});
+}));
+
+const $ = id => document.getElementById(id);
+const card = $("card"), filterEl = $("filter");
+let deck = ALL.slice(), idx = 0, answered = false;
+const status = new Map(); // card -> "known" | "review"
+
+// Filter dropdown
+filterEl.innerHTML = '<option value="all">All topics (' + ALL.length + ')</option>' +
+  DATA.map(([s, items], i) => '<option value="' + i + '">' + s + ' (' + items.length + ')</option>').join("") +
+  '<option value="review">Marked for review</option>';
+filterEl.onchange = () => {
+  const v = filterEl.value;
+  if (v === "all") deck = ALL.slice();
+  else if (v === "review") deck = ALL.filter(c => status.get(c) === "review");
+  else deck = ALL.filter(c => c.section === DATA[+v][0]);
+  idx = 0; render();
+};
+
+function shuffleArr(a){ for (let i = a.length - 1; i > 0; i--) { const j = Math.floor(Math.random() * (i + 1)); [a[i], a[j]] = [a[j], a[i]]; } return a; }
+
+function render() {
+  card.classList.remove("flipped");
+  answered = false;
+  if (!deck.length) {
+    $("section").textContent = "";
+    $("front").textContent = "No cards here yet. Mark some cards with × and they will show up in this set.";
+    $("choices").innerHTML = ""; $("result").textContent = "";
+    $("counter").textContent = "0 of 0"; $("bar").style.width = "0%"; updateStats(); return;
+  }
+  const c = deck[idx];
+  $("section").textContent = c.section;
+  $("front").textContent = c.q;
+  $("answer").textContent = c.a;
+  $("why").textContent = c.why;
+  $("result").textContent = ""; $("result").className = "result";
+  const opts = shuffleArr([c.a, ...c.wrong]);
+  const box = $("choices"); box.innerHTML = "";
+  opts.forEach(text => {
+    const b = document.createElement("button");
+    b.className = "choice"; b.textContent = text;
+    b.onclick = e => { e.stopPropagation(); pick(b, text, c); };
+    box.appendChild(b);
+  });
+  $("counter").textContent = (idx + 1) + " of " + deck.length;
+  $("bar").style.width = ((idx + 1) / deck.length * 100) + "%";
+  updateStats();
+}
+
+function pick(btn, text, c) {
+  if (answered) return; answered = true;
+  const right = text === c.a;
+  document.querySelectorAll(".choice").forEach(b => {
+    b.disabled = true;
+    if (b.textContent === c.a) b.classList.add("correct");
+  });
+  if (!right) btn.classList.add("wrong");
+  $("result").textContent = right ? "Correct" : "Not quite. The right answer is highlighted.";
+  $("result").className = "result " + (right ? "ok" : "no");
+}
+
+function updateStats() {
+  let k = 0, r = 0; status.forEach(v => v === "known" ? k++ : r++);
+  $("known").textContent = "Known: " + k;
+  $("stats").textContent = "Marked ×: " + r + "  •  Marked ✓: " + k;
+}
+
+function pulseCard() {
+  card.classList.add("is-moving");
+  window.setTimeout(() => card.classList.remove("is-moving"), 240);
+}
+
+function flip(){ if (deck.length) { card.classList.toggle("flipped"); pulseCard(); } }
+function reveal(){ if (deck.length) { card.classList.add("flipped"); pulseCard(); } }
+function next(){ if (!deck.length) return; idx = (idx + 1) % deck.length; render(); pulseCard(); }
+function prev(){ if (!deck.length) return; idx = (idx - 1 + deck.length) % deck.length; render(); pulseCard(); }
+function shuffle(){ shuffleArr(deck); idx = 0; render(); pulseCard(); }
+function toggleFull() {
+  if (!document.fullscreenElement) document.documentElement.requestFullscreen?.();
+  else document.exitFullscreen?.();
+}
+function downloadPage() {
+  const blob = new Blob(["<!DOCTYPE html>\n" + document.documentElement.outerHTML], {type:"text/html"});
+  const url = URL.createObjectURL(blob);
+  const a = document.createElement("a");
+  a.href = url; a.download = "ITST_306_UXUI_Flashcards.html";
+  document.body.appendChild(a); a.click(); a.remove();
+  URL.revokeObjectURL(url);
+}
+function mark(known){
+  if (!deck.length) return;
+  status.set(deck[idx], known ? "known" : "review");
+  updateStats();
+  if (idx < deck.length - 1) next();
+}
+
+card.onclick = flip;
+$("btnNext").onclick = next; $("btnPrev").onclick = prev; $("btnShuffle").onclick = shuffle;
+$("btnReveal").onclick = e => { e.stopPropagation(); reveal(); };
+$("btnFull").onclick = e => { e.stopPropagation(); toggleFull(); };
+$("btnDownload").onclick = e => { e.stopPropagation(); downloadPage(); };
+$("btnKnown").onclick = () => mark(true); $("btnReview").onclick = () => mark(false);
+document.addEventListener("keydown", e => {
+  if (e.target.tagName === "SELECT") return;
+  if (e.key === "ArrowRight") next();
+  else if (e.key === "ArrowLeft") prev();
+  else if (e.key === " ") { e.preventDefault(); flip(); }
+  else if (e.key.toLowerCase() === "r") shuffle();
+  else if (e.key.toLowerCase() === "f") toggleFull();
+});
+document.addEventListener("fullscreenchange", () => {
+  $("btnFull").textContent = document.fullscreenElement ? "Exit" : "Full";
+});
+render();
+</script>
+</body>
+</html>
