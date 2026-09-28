@@ -135,7 +135,7 @@ body:fullscreen .app{max-width:1040px;padding-top:22px}
     <div class="utility">
       <button id="btnReveal">Reveal</button>
       <button id="btnFull">Full</button>
-      <button id="btnDownload">Download</button>
+      <button id="btnDownload">Q&A</button>
     </div>
     <div class="shortcut"><kbd>←</kbd> <kbd>→</kbd> <kbd>Space</kbd></div>
   </div>
@@ -355,11 +355,57 @@ function toggleFull() {
   if (!document.fullscreenElement) document.documentElement.requestFullscreen?.();
   else document.exitFullscreen?.();
 }
-function downloadPage() {
-  const blob = new Blob(["<!DOCTYPE html>\n" + document.documentElement.outerHTML], {type:"text/html"});
+function escapeHtml(text) {
+  return String(text).replace(/[&<>"']/g, char => ({
+    "&":"&amp;", "<":"&lt;", ">":"&gt;", '"':"&quot;", "'":"&#039;"
+  }[char]));
+}
+
+function downloadQA() {
+  const sections = DATA.map(([section, items]) => `
+    <section>
+      <h2>${escapeHtml(section)}</h2>
+      ${items.map(([q, a, wrong, why], index) => `
+        <article>
+          <h3>${index + 1}. ${escapeHtml(q)}</h3>
+          <p><strong>Answer:</strong> ${escapeHtml(a)}</p>
+          <p><strong>Explanation:</strong> ${escapeHtml(why)}</p>
+          <p><strong>Other choices:</strong> ${wrong.map(escapeHtml).join(", ")}</p>
+        </article>
+      `).join("")}
+    </section>
+  `).join("");
+  const page = `<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>ITST 306 Questions and Answers</title>
+<style>
+body{margin:0;background:#f6f7fb;color:#17202a;font-family:"Segoe UI",system-ui,-apple-system,Arial,sans-serif;line-height:1.55}
+main{width:min(900px,100%);margin:0 auto;padding:28px 18px 44px}
+h1{font-size:32px;line-height:1.1;margin:0 0 8px;color:#0f2830}
+.meta{color:#637083;margin:0 0 26px}
+section{margin-top:26px}
+h2{font-size:22px;border-bottom:1px solid #dde5ee;padding-bottom:8px;color:#125766}
+article{background:#fff;border:1px solid #dde5ee;border-radius:8px;padding:16px;margin:12px 0;box-shadow:0 8px 24px rgba(31,52,74,.08)}
+h3{font-size:17px;margin:0 0 10px}
+p{margin:7px 0}
+@media print{body{background:#fff}main{padding:0}article{box-shadow:none;break-inside:avoid}}
+</style>
+</head>
+<body>
+<main>
+  <h1>ITST 306 Questions and Answers</h1>
+  <p class="meta">${ALL.length} flashcards grouped by topic. Generated from the ITST 306 flashcard reviewer.</p>
+  ${sections}
+</main>
+</body>
+</html>`;
+  const blob = new Blob([page], {type:"text/html"});
   const url = URL.createObjectURL(blob);
   const a = document.createElement("a");
-  a.href = url; a.download = "ITST_306_UXUI_Flashcards.html";
+  a.href = url; a.download = "ITST_306_Questions_and_Answers.html";
   document.body.appendChild(a); a.click(); a.remove();
   URL.revokeObjectURL(url);
 }
@@ -374,7 +420,7 @@ card.onclick = flip;
 $("btnNext").onclick = next; $("btnPrev").onclick = prev; $("btnShuffle").onclick = shuffle;
 $("btnReveal").onclick = e => { e.stopPropagation(); reveal(); };
 $("btnFull").onclick = e => { e.stopPropagation(); toggleFull(); };
-$("btnDownload").onclick = e => { e.stopPropagation(); downloadPage(); };
+$("btnDownload").onclick = e => { e.stopPropagation(); downloadQA(); };
 $("btnKnown").onclick = () => mark(true); $("btnReview").onclick = () => mark(false);
 document.addEventListener("keydown", e => {
   if (e.target.tagName === "SELECT") return;
