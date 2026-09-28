@@ -149,18 +149,18 @@ body:fullscreen .app{max-width:1040px;padding-top:22px}
 
   <div class="actions">
     <div class="controls">
-      <button class="circle" id="btnReview" title="Mark for review" aria-label="Mark for review">×</button>
-      <button class="circle" id="btnKnown" title="Mark as known" aria-label="Mark as known">✓</button>
+      <button class="circle" id="btnReview" type="button" title="Mark for review" aria-label="Mark for review">×</button>
+      <button class="circle" id="btnKnown" type="button" title="Mark as known" aria-label="Mark as known">✓</button>
     </div>
     <div class="nav">
-      <button id="btnPrev">← Prev</button>
-      <button id="btnShuffle">Shuffle</button>
-      <button id="btnNext">Next →</button>
+      <button id="btnPrev" type="button">← Prev</button>
+      <button id="btnShuffle" type="button">Shuffle</button>
+      <button id="btnNext" type="button">Next →</button>
     </div>
     <div class="utility">
-      <button id="btnReveal">Reveal</button>
-      <button id="btnFull">Full</button>
-      <button id="btnDownload">Q&A</button>
+      <button id="btnReveal" type="button">Reveal</button>
+      <button id="btnFull" type="button">Full</button>
+      <button id="btnDownload" type="button">Q&A</button>
     </div>
     <div class="shortcut"><kbd>←</kbd> <kbd>→</kbd> <kbd>Space</kbd></div>
   </div>
@@ -324,6 +324,7 @@ function shuffleArr(a){ for (let i = a.length - 1; i > 0; i--) { const j = Math.
 function render() {
   card.classList.remove("flipped");
   answered = false;
+  updateRevealButton();
   if (!deck.length) {
     $("section").textContent = "";
     $("front").textContent = "No cards here yet. Mark some cards with × and they will show up in this set.";
@@ -372,8 +373,22 @@ function pulseCard() {
   window.setTimeout(() => card.classList.remove("is-moving"), 240);
 }
 
-function flip(){ if (deck.length) { card.classList.toggle("flipped"); pulseCard(); } }
-function reveal(){ if (deck.length) { card.classList.add("flipped"); pulseCard(); } }
+function updateRevealButton() {
+  $("btnReveal").textContent = card.classList.contains("flipped") ? "Hide" : "Reveal";
+}
+
+function flip(){
+  if (!deck.length) return;
+  card.classList.toggle("flipped");
+  updateRevealButton();
+  pulseCard();
+}
+function reveal(){
+  if (!deck.length) return;
+  card.classList.toggle("flipped");
+  updateRevealButton();
+  pulseCard();
+}
 function next(){ if (!deck.length) return; idx = (idx + 1) % deck.length; render(); pulseCard(); }
 function prev(){ if (!deck.length) return; idx = (idx - 1 + deck.length) % deck.length; render(); pulseCard(); }
 function shuffle(){ shuffleArr(deck); idx = 0; render(); pulseCard(); }
@@ -444,9 +459,9 @@ function mark(known){
 
 card.onclick = flip;
 $("btnNext").onclick = next; $("btnPrev").onclick = prev; $("btnShuffle").onclick = shuffle;
-$("btnReveal").onclick = e => { e.stopPropagation(); reveal(); };
-$("btnFull").onclick = e => { e.stopPropagation(); toggleFull(); };
-$("btnDownload").onclick = e => { e.stopPropagation(); downloadQA(); };
+$("btnReveal").onclick = e => { e.preventDefault(); e.stopPropagation(); reveal(); };
+$("btnFull").onclick = e => { e.preventDefault(); e.stopPropagation(); toggleFull(); };
+$("btnDownload").onclick = e => { e.preventDefault(); e.stopPropagation(); downloadQA(); };
 $("btnKnown").onclick = () => mark(true); $("btnReview").onclick = () => mark(false);
 document.addEventListener("keydown", e => {
   if (e.target.tagName === "SELECT") return;
