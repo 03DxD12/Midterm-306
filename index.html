@@ -18,6 +18,8 @@ button,select{font:inherit;-webkit-tap-highlight-color:transparent}
 .app{width:min(980px,100%);margin:0 auto;padding:20px 16px 30px}
 .header{display:grid;gap:12px;margin-bottom:16px;animation:slideDown .46s ease both}
 .titlebar{display:flex;align-items:flex-end;justify-content:space-between;gap:14px}
+.brand{display:inline-flex;align-items:center;gap:8px;color:var(--accent-strong);font-size:12px;font-weight:800;letter-spacing:.12em;text-transform:uppercase;margin-bottom:8px}
+.brand::before{content:"";width:9px;height:9px;border-radius:50%;background:#f2b84b;box-shadow:0 0 0 5px rgba(242,184,75,.15)}
 h1{font-size:clamp(24px,4vw,38px);line-height:1.05;margin:0;letter-spacing:0;color:#0f2830}
 .subtitle{color:var(--muted);font-size:14px;line-height:1.45;margin-top:6px}
 .toolbar{display:flex;justify-content:flex-end;gap:10px;flex-wrap:wrap}
@@ -65,6 +67,8 @@ kbd{background:#ffffff;border:1px solid #cfdbe4;border-bottom-color:#b9c8d3;bord
 .utility button{background:#0f2830;color:#ffffff;border-color:#0f2830}
 .utility button:hover{background:#16434e;border-color:#16434e}
 .stats{text-align:center;color:var(--muted);font-size:13px;line-height:1.5;margin-top:14px}
+.footer{margin-top:22px;padding:16px 0 2px;text-align:center;color:#637083;font-size:13px;line-height:1.5}
+.footer strong{color:#125766}
 body:fullscreen{background:#eef4f6}
 body:fullscreen .app{max-width:1040px;padding-top:22px}
 @keyframes riseIn{from{opacity:0;transform:translateY(12px) scale(.985)}to{opacity:1;transform:translateY(0) scale(1)}}
@@ -74,6 +78,7 @@ body:fullscreen .app{max-width:1040px;padding-top:22px}
   body{background:#f6f7fb}
   .app{padding:12px 12px 22px}
   .titlebar{display:block}
+  .brand{margin-bottom:6px}
   h1{font-size:28px}
   .subtitle{font-size:13px}
   .toolbar{justify-content:stretch}
@@ -112,6 +117,7 @@ body:fullscreen .app{max-width:1040px;padding-top:22px}
   <header class="header">
     <div class="titlebar">
       <div>
+        <div class="brand">DSD</div>
         <h1>ITST 306 Flashcards</h1>
         <div class="subtitle">UX/UI and Cross Platform Applications reviewer</div>
       </div>
@@ -159,6 +165,7 @@ body:fullscreen .app{max-width:1040px;padding-top:22px}
     <div class="shortcut"><kbd>←</kbd> <kbd>→</kbd> <kbd>Space</kbd></div>
   </div>
   <div class="stats" id="stats"></div>
+  <footer class="footer">DSD reviewer project. Special credits to <strong>Cat</strong>.</footer>
 </div>
 
 <script>
