@@ -4,6 +4,8 @@
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <meta name="description" content="A clean mobile-friendly ITST 306 UX/UI flashcard reviewer with reveal answer, fullscreen, download, topic filtering, shuffle, and review tracking.">
+<meta name="theme-color" content="#125766">
+<link rel="manifest" href="manifest.webmanifest">
 <title>ITST 306 UX/UI Flashcards</title>
 <style>
 :root{
@@ -479,6 +481,11 @@ document.addEventListener("keydown", e => {
 document.addEventListener("fullscreenchange", () => {
   $("btnFull").textContent = document.fullscreenElement ? "Exit" : "Full";
 });
+if ("serviceWorker" in navigator) {
+  window.addEventListener("load", () => {
+    navigator.serviceWorker.register("./sw.js").catch(() => {});
+  });
+}
 render();
 </script>
 </body>

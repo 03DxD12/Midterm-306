@@ -1,0 +1,11 @@
+{
+  "name": "ITST 306 UX/UI Flashcards",
+  "short_name": "ITST 306",
+  "description": "Mobile-friendly ITST 306 UX/UI flashcard reviewer with offline support.",
+  "start_url": "./",
+  "scope": "./",
+  "display": "standalone",
+  "background_color": "#f6f7fb",
+  "theme_color": "#125766",
+  "icons": []
+}
